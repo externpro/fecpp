@@ -9,6 +9,8 @@
 #include <string.h>
 #include "fecpp.h"
 
+using fecpp::byte;
+
 /*
  * compatibility stuff
  */
@@ -77,7 +79,7 @@ my_malloc(int sz, const char *s)
  */
 
 int
-test_decode(fec_code& code, size_t k, size_t index[], size_t sz,
+test_decode(fecpp::fec_code& code, size_t k, size_t index[], size_t sz,
             const char *s)
 {
     int errors;
@@ -88,12 +90,12 @@ test_decode(fec_code& code, size_t k, size_t index[], size_t sz,
     static byte **d_original = NULL, **d_src = NULL ;
 
     if (sz < 1 || sz > 8192) {
-	fprintf(stderr, "test_decode: size %d invalid, must be 1..8K\n",
+	fprintf(stderr, "test_decode: size %zd invalid, must be 1..8K\n",
 		sz);
 	return 1 ;
     }
     if (k < 1 || k > 255 + 1) {
-	fprintf(stderr, "test_decode: k %d invalid, must be 1..%d\n",
+	fprintf(stderr, "test_decode: k %zd invalid, must be 1..%d\n",
 		k, 255 + 1 );
 	return 2 ;
     }
@@ -148,11 +150,11 @@ test_decode(fec_code& code, size_t k, size_t index[], size_t sz,
 	    fprintf(stderr, "error reconstructing block %d\n", i);
 	}
     if (errors)
-	fprintf(stderr, "Errors reconstructing %d blocks out of %d\n",
+	fprintf(stderr, "Errors reconstructing %d blocks out of %zd\n",
 	    errors, k);
 
     fprintf(stderr,
-	"  k %3d, l %3d  c_enc %10.6f MB/s c_dec %10.6f MB/s     \r",
+	"  k %3zd, l %3d  c_enc %10.6f MB/s c_dec %10.6f MB/s     \r",
 	k, reconstruct,
 	(double)(k * sz * reconstruct)/(double)ticks[2],
 	(double)(k * sz * reconstruct)/(double)ticks[1]);
@@ -206,7 +208,7 @@ main(int argc, char *argv[])
 
     for ( kk = KK ; kk > 2 ; kk-- )
        {
-       fec_code code(kk, lim);
+       fecpp::fec_code code(kk, lim);
        ixs = (size_t*)my_malloc(kk * sizeof(size_t), "ixs" );
 
        for (i=0; i<kk; i++) ixs[i] = kk - i ;
