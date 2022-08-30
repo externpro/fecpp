@@ -1,7 +1,4 @@
-include_directories(${PROJECT_SOURCE_DIR})
-set(externpro_DIR ${CMAKE_INSTALL_PREFIX})
-set(XP_MODULE_PATH ${externpro_DIR}/share/cmake)
-include(${XP_MODULE_PATH}/xpfunmac.cmake)
+set(XP_MODULE_PATH ${CMAKE_MODULE_PATH})
 xpFindPkg(PKGS boost)
 set(${PROJECT_NAME}_exes
   benchmark
