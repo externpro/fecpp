@@ -1,4 +1,3 @@
-set(XP_MODULE_PATH ${CMAKE_MODULE_PATH})
 xpFindPkg(PKGS boost)
 set(${PROJECT_NAME}_exes
   benchmark
