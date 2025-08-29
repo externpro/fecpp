@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.31)
 project(fecpp)
 include(GNUInstallDirs)
-include(flags)
+include(xpflags)
 set(lib_name ${PROJECT_NAME})
 #######################################
 set(${lib_name}_libsrcs
