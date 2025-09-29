@@ -6,7 +6,7 @@ set(${PROJECT_NAME}_exes
   test_recovery
   zfec
   )
-set(test_recovery_deps Boost::boost)
+set(test_recovery_deps Boost::headers)
 foreach(exe ${${PROJECT_NAME}_exes})
   source_group("" FILES ${exe}.cpp)
   add_executable(${exe} ${exe}.cpp)
