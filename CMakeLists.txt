@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.31)
 set(CMAKE_PROJECT_TOP_LEVEL_INCLUDES .devcontainer/cmake/xproinc.cmake)
 project(fecpp)
-include(GNUInstallDirs)
-include(xpflags)
 set(lib_name ${PROJECT_NAME})
 #######################################
 set(${lib_name}_libsrcs
@@ -18,16 +16,19 @@ target_include_directories(${lib_name} PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTAL
   )
 add_subdirectory(test)
 #######################################
-set(lib ${lib_name})
+set(targetsFile ${PROJECT_NAME}-targets)
 if(DEFINED XP_NAMESPACE)
+  xpExternPackage(NAMESPACE ${XP_NAMESPACE}
+    TARGETS_FILE ${targetsFile} LIBRARIES ${lib_name}
+    BASE v0.9 XPDIFF "intro" PVT_DEPS boost
+    WEB "http://www.randombit.net/code/fecpp/" UPSTREAM "github.com/randombit/fecpp"
+    DESC "C++ forward error correction with SIMD optimizations"
+    LICENSE "[BSD-2-Clause](http://www.randombit.net/code/fecpp/ 'BSD 2-Clause Simplified License')"
+    )
   set(nameSpace NAMESPACE ${XP_NAMESPACE}::)
-  string(PREPEND lib "${XP_NAMESPACE}::")
-endif()
-if(NOT DEFINED XP_INSTALL_CMAKEDIR)
+elseif(NOT DEFINED XP_INSTALL_CMAKEDIR)
   set(XP_INSTALL_CMAKEDIR ${CMAKE_INSTALL_DATADIR}/cmake)
 endif()
-set(targetsFile ${PROJECT_NAME}-targets)
-xpPackageDevel(TARGETS_FILE ${targetsFile} LIBRARIES ${lib})
 install(TARGETS ${lib_name} EXPORT ${targetsFile}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
