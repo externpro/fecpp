@@ -1,4 +1,4 @@
-xpFindPkg(PKGS boost)
+find_package(Boost)
 set(${PROJECT_NAME}_exes
   benchmark
   gen_test_vec
