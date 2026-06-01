@@ -15,7 +15,7 @@ using fecpp::byte;
 /*
  * compatibility stuff
  */
-#ifdef MSDOS	/* but also for others, e.g. sun... */
+#if defined(_WIN32) || defined(_WIN64) || defined(MSDOS)	/* but also for others, e.g. sun... */
 #define NEED_BCOPY
 #define bcmp(a,b,n) memcmp(a,b,n)
 #endif
@@ -38,6 +38,7 @@ struct timeval {
     unsigned long ticks;
 };
 #define gettimeofday(x, dummy) { (x)->ticks = clock() ; }
+#define TICK(t) { struct timeval x ; gettimeofday(&x, NULL) ; t = x.ticks ; }
 #define DIFF_T(a,b) (1+ 1000000*(a.ticks - b.ticks) / CLOCKS_PER_SEC )
 typedef unsigned long u_long ;
 typedef unsigned short u_short ;
