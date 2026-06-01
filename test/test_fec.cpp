@@ -38,21 +38,21 @@ struct timeval {
     unsigned long ticks;
 };
 #define gettimeofday(x, dummy) { (x)->ticks = clock() ; }
-#define TICK(t) { struct timeval x ; gettimeofday(&x, NULL) ; t = x.ticks ; }
 #define DIFF_T(a,b) (1+ 1000000*(a.ticks - b.ticks) / CLOCKS_PER_SEC )
+#define TICK(t) { struct timeval x ; gettimeofday(&x, NULL) ; t = x.ticks ; }
 typedef unsigned long u_long ;
 typedef unsigned short u_short ;
 #else /* typically, unix systems */
 #include <sys/time.h>
 #define DIFF_T(a,b) \
 	(1+ 1000000*(a.tv_sec - b.tv_sec) + (a.tv_usec - b.tv_usec) )
-#endif
 
 #define TICK(t) \
 	{struct timeval x ; \
 	gettimeofday(&x, NULL) ; \
 	t = x.tv_usec + 1000000* (x.tv_sec & 0xff ) ; \
 	}
+#endif
 #define TOCK(t) \
 	{ u_long t1 ; TICK(t1) ; \
 	  if (t1 < t) t = 256000000 + t1 - t ; \
