@@ -7,12 +7,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <vector>
 #include "fecpp.h"
+
+using fecpp::byte;
 
 /*
  * compatibility stuff
  */
-#ifdef MSDOS	/* but also for others, e.g. sun... */
+#if defined(_WIN32) || defined(_WIN64) || defined(MSDOS)	/* but also for others, e.g. sun... */
 #define NEED_BCOPY
 #define bcmp(a,b,n) memcmp(a,b,n)
 #endif
@@ -29,26 +32,27 @@
 #define DEB(x)
 #define DDB(x) x
 #define	DEBUG	0	/* minimal debugging */
-#ifdef	MSDOS
+#if defined(_WIN32) || defined(_WIN64) || defined(MSDOS)
 #include <time.h>
 struct timeval {
     unsigned long ticks;
 };
 #define gettimeofday(x, dummy) { (x)->ticks = clock() ; }
 #define DIFF_T(a,b) (1+ 1000000*(a.ticks - b.ticks) / CLOCKS_PER_SEC )
+#define TICK(t) { struct timeval x ; gettimeofday(&x, NULL) ; t = x.ticks ; }
 typedef unsigned long u_long ;
 typedef unsigned short u_short ;
 #else /* typically, unix systems */
 #include <sys/time.h>
 #define DIFF_T(a,b) \
 	(1+ 1000000*(a.tv_sec - b.tv_sec) + (a.tv_usec - b.tv_usec) )
-#endif
 
 #define TICK(t) \
 	{struct timeval x ; \
 	gettimeofday(&x, NULL) ; \
 	t = x.tv_usec + 1000000* (x.tv_sec & 0xff ) ; \
 	}
+#endif
 #define TOCK(t) \
 	{ u_long t1 ; TICK(t1) ; \
 	  if (t1 < t) t = 256000000 + t1 - t ; \
@@ -77,7 +81,7 @@ my_malloc(int sz, const char *s)
  */
 
 int
-test_decode(fec_code& code, size_t k, size_t index[], size_t sz,
+test_decode(fecpp::fec_code& code, size_t k, size_t index[], size_t sz,
             const char *s)
 {
     int errors;
@@ -88,12 +92,12 @@ test_decode(fec_code& code, size_t k, size_t index[], size_t sz,
     static byte **d_original = NULL, **d_src = NULL ;
 
     if (sz < 1 || sz > 8192) {
-	fprintf(stderr, "test_decode: size %d invalid, must be 1..8K\n",
+	fprintf(stderr, "test_decode: size %zd invalid, must be 1..8K\n",
 		sz);
 	return 1 ;
     }
     if (k < 1 || k > 255 + 1) {
-	fprintf(stderr, "test_decode: k %d invalid, must be 1..%d\n",
+	fprintf(stderr, "test_decode: k %zd invalid, must be 1..%d\n",
 		k, 255 + 1 );
 	return 2 ;
     }
@@ -134,12 +138,45 @@ test_decode(fec_code& code, size_t k, size_t index[], size_t sz,
 	if (index[i] >= k ) reconstruct ++ ;
 
     TICK(ticks[2]);
-    for( i = 0 ; i < k ; i++ )
-       code.encode(d_original, d_src[i], index[i], sz );
+    // Create contiguous input for new API (requires size % K == 0)
+    std::vector<uint8_t> contiguous_input(k * sz);
+    for( i = 0 ; i < k ; i++ ) {
+        memcpy(&contiguous_input[i * sz], d_original[i], sz);
+    }
+
+    // Encode and capture only the shares we need
+    code.encode(contiguous_input.data(), k * sz, [&](size_t share_id, size_t total_shares, const uint8_t data[], size_t len) {
+        for( size_t j = 0; j < k; j++ ) {
+            if( index[j] == share_id ) {
+                memcpy(d_src[j], data, len);
+                break;
+            }
+        }
+    });
     TOCK(ticks[2]);
 
     TICK(ticks[1]);
-    code.decode(d_src, index, sz);
+    std::map<size_t, const uint8_t*> shares;
+    for( i = 0 ; i < k ; i++ ) {
+        shares[index[i]] = d_src[i];
+    }
+
+    // Use temp buffers to avoid overwriting share data during decode
+    byte** d_reconstructed = (byte**)my_malloc(k * sizeof(byte*), "d_reconstructed ptr");
+    for( i = 0 ; i < k ; i++ ) {
+        d_reconstructed[i] = (byte*)my_malloc(sz, "d_reconstructed data");
+    }
+
+    code.decode(shares, sz, [&](size_t block_id, size_t k_blocks, const uint8_t data[], size_t len) {
+        memcpy(d_reconstructed[block_id], data, len);
+    });
+
+    // Copy results back to d_src
+    for( i = 0 ; i < k ; i++ ) {
+        memcpy(d_src[i], d_reconstructed[i], sz);
+        free(d_reconstructed[i]);
+    }
+    free(d_reconstructed);
     TOCK(ticks[1]);
 
     for (i=0; i<k; i++)
@@ -148,11 +185,11 @@ test_decode(fec_code& code, size_t k, size_t index[], size_t sz,
 	    fprintf(stderr, "error reconstructing block %d\n", i);
 	}
     if (errors)
-	fprintf(stderr, "Errors reconstructing %d blocks out of %d\n",
+	fprintf(stderr, "Errors reconstructing %d blocks out of %zd\n",
 	    errors, k);
 
     fprintf(stderr,
-	"  k %3d, l %3d  c_enc %10.6f MB/s c_dec %10.6f MB/s     \r",
+	"  k %3zd, l %3d  c_enc %10.6f MB/s c_dec %10.6f MB/s     \r",
 	k, reconstruct,
 	(double)(k * sz * reconstruct)/(double)ticks[2],
 	(double)(k * sz * reconstruct)/(double)ticks[1]);
@@ -206,11 +243,11 @@ main(int argc, char *argv[])
 
     for ( kk = KK ; kk > 2 ; kk-- )
        {
-       fec_code code(kk, lim);
+       fecpp::fec_code code(kk, lim);
        ixs = (size_t*)my_malloc(kk * sizeof(size_t), "ixs" );
 
        for (i=0; i<kk; i++) ixs[i] = kk - i ;
-       sprintf(buf, "kk=%d, kk - i", kk);
+       snprintf(buf, sizeof(buf), "kk=%d, kk - i", kk);
        test_decode(code, kk, ixs, SZ, buf);
 
        for (i=0; i<kk; i++) ixs[i] = i ;

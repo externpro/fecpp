@@ -7,3 +7,8 @@ tests.txt
 *.o
 *.a
 *.so
+
+# externpro
+.env
+_bld*/
+docker-compose.override.yml
