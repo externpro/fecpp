@@ -32,7 +32,7 @@ using fecpp::byte;
 #define DEB(x)
 #define DDB(x) x
 #define	DEBUG	0	/* minimal debugging */
-#ifdef	MSDOS
+#if defined(_WIN32) || defined(_WIN64) || defined(MSDOS)
 #include <time.h>
 struct timeval {
     unsigned long ticks;

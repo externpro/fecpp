@@ -6,7 +6,9 @@
 
 #include "fecpp.h"
 #include <emmintrin.h>
+#if defined(_MSC_VER)
 #include <intrin.h>
+#endif
 
 namespace fecpp {
 
