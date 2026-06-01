@@ -3,6 +3,7 @@ project(fecpp)
 set(lib_name ${PROJECT_NAME})
 #######################################
 set(${lib_name}_libsrcs
+  cpuid.cpp
   fecpp.cpp
   fecpp.h
   #fecpp_python.cpp # TODO
