@@ -1,0 +1,14 @@
+find_package(Boost)
+set(${PROJECT_NAME}_exes
+  benchmark
+  gen_test_vec
+  test_fec
+  test_recovery
+  zfec
+  )
+set(test_recovery_deps Boost::headers)
+foreach(exe ${${PROJECT_NAME}_exes})
+  source_group("" FILES ${exe}.cpp)
+  add_executable(${exe} ${exe}.cpp)
+  target_link_libraries(${exe} PRIVATE ${lib_name} ${${exe}_deps})
+endforeach()
