@@ -6,6 +6,7 @@
 
 #include "fecpp.h"
 #include <emmintrin.h>
+#include <intrin.h>
 
 namespace fecpp {
 
@@ -13,7 +14,13 @@ size_t addmul_sse2(uint8_t z[], const uint8_t x[], uint8_t y, size_t size)
    {
    const __m128i polynomial = _mm_set1_epi8(0x1D);
 
+#if defined(_MSC_VER)
+   unsigned long y_bits;
+   _BitScanReverse(&y_bits, y);
+   y_bits += 1; // _BitScanReverse returns 0-based index
+#else
    const size_t y_bits = 32 - __builtin_clz(y);
+#endif
 
    // unrolled out to cache line size
    while(size >= 64)
@@ -29,10 +36,10 @@ size_t addmul_sse2(uint8_t z[], const uint8_t x[], uint8_t y, size_t size)
       __m128i z_4 = _mm_load_si128((const __m128i*)(z + 48));
 
       // prefetch next two x and z blocks
-      _mm_prefetch(x + 64, _MM_HINT_T0);
-      _mm_prefetch(z + 64, _MM_HINT_T0);
-      _mm_prefetch(x + 128, _MM_HINT_T1);
-      _mm_prefetch(z + 128, _MM_HINT_T1);
+      _mm_prefetch(reinterpret_cast<const char*>(x + 64), _MM_HINT_T0);
+      _mm_prefetch(reinterpret_cast<const char*>(z + 64), _MM_HINT_T0);
+      _mm_prefetch(reinterpret_cast<const char*>(x + 128), _MM_HINT_T1);
+      _mm_prefetch(reinterpret_cast<const char*>(z + 128), _MM_HINT_T1);
 
       if(y & 0x01)
          {
